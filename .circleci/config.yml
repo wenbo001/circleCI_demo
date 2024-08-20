@@ -1,33 +1,80 @@
-# This config was automatically generated from your source code
-# Stacks detected: deps:node:.
 version: 2.1
-orbs:
-  node: circleci/node@5
 jobs:
-  test-node:
-    # Install node dependencies and run tests
-    executor: node/default
+  run-tests:
+    docker:
+      - image: circleci/node:latest
     steps:
       - checkout
-      - node/install-packages:
-          cache-path: ~/project/node_modules
-          override-ci-command: npm install
+      - restore_cache:
+          keys:
+            - dependency-cache-{{ checksum "package.json" }}
+            - dependency-cache-
       - run:
-          name: Run tests
-          command: npm test --passWithNoTests
-  deploy:
-    # This is an example deploy job, not actually used by the workflow
+          name: Install Dependencies
+          command: . build/install_dependencies.sh
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+      - run:
+          name: Login to Org
+          command: . build/login_to_sandbox.sh
+      - run:
+          name: Run Apex Tests
+          command: . build/run_apex_tests.sh
+      - store_test_results:
+          path: test-results
+  code-review:
     docker:
-      - image: cimg/base:stable
+      - image: circleci/node:latest
     steps:
-      # Replace this with steps to deploy to users
+      - checkout
+      - restore_cache:
+          keys:
+            - dependency-cache-{{ checksum "package.json" }}
+            - dependency-cache-
       - run:
-          name: deploy
-          command: '#e.g. ./deploy.sh'
+          name: Install Dependencies
+          command: . build/install_dependencies.sh
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+      - run:
+          name: SFDX Scanner Analysis
+          command: . build/run_sfdx_scanner.sh
+      - store_artifacts:
+          path: sfdxScannerAnalysis.csv
+  deploy-code:
+    docker:
+      - image: circleci/node:latest
+    steps:
+      - checkout
+      - restore_cache:
+          keys:
+            - dependency-cache-{{ checksum "package.json" }}
+            - dependency-cache-
+      - run:
+          name: "Install Dependencies"
+          command: . build/install_dependencies.sh
+      - save_cache:
+          key: dependency-cache-{{ checksum "package.json" }}
+          paths:
+            - node_modules
+      - run:
+          name: Login to Org
+          command: . build/login_to_org.sh
+      - run:
+          name: Deploy to Org
+          command: . build/deploy_code.sh
 workflows:
-  build-and-test:
+  version: 2
+  validate:
     jobs:
-      - test-node
-    # - deploy:
-    #     requires:
-    #       - test-node
+      - run-tests
+      - code-review:
+          requires:
+            - run-tests
+      - deploy-code:
+          requires:
+            - code-review
