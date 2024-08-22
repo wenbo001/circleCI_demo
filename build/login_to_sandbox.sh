@@ -1,6 +1,6 @@
 echo "Logging into Sandbox Salesforce Org"
 mkdir keys
-echo $SANDBOX_CERT_KEY | base64 -di > keys/server.key
+echo "$SANDBOX_CERT_KEY" > keys/server.key
 
 # Print the value of the key
 cat keys/server.key
