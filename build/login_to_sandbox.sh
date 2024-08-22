@@ -11,4 +11,4 @@ if [ ! -s keys/server.key ]; then
 fi
 
 echo "Authenticating org"
-sfdx force:auth:jwt:grant --clientid $SANDBOX_APP_KEY --jwtkeyfile keys/server.key --username $SANDBOX_USERNAME --setdefaultdevhubusername -a DevHub
+sfdx force:auth:jwt:grant -f keys/server.key -i 3MVG9PwZx9R6_Urd9r8PNJwDnYvA4Bw.SL55ochLfU19uTR9i3aReGiGEnsgcFvq3MHJWqDwZr3jf9mVJYQBm -o liuwenbo@case.com -d -s -r https://login.salesforce.comgi
